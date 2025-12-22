@@ -1,0 +1,2 @@
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["F401"]
