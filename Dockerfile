@@ -2,9 +2,16 @@ FROM python:3.13-slim
 
 WORKDIR /code
 
-COPY requirements.txt ./
+ARG INSTALL_EXTRAS=""
 
-RUN pip install -r requirements.txt
+COPY pyproject.toml README.md ./
+COPY app ./app
+
+RUN if [ -n "$INSTALL_EXTRAS" ]; then \
+    pip install --no-cache-dir ".[${INSTALL_EXTRAS}]"; \
+    else \
+    pip install --no-cache-dir .; \
+    fi
 
 COPY . . 
 

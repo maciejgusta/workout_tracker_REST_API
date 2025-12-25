@@ -1,6 +1,9 @@
 services:
     api_test:
-        build: .
+        build:
+            context: .
+            args:
+                INSTALL_EXTRAS: "test"
         volumes:
             - .:/code
         env_file:

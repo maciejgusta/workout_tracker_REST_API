@@ -20,3 +20,11 @@ def test_register_user_exists(create_user):
     res2 = create_user(username=username, password=password)
     assert res2.status_code == 409
     assert res2.json().get("detail") == "Username already exists"
+
+def test_register_username_missing(client, assert_missing_field):
+    res = client.post("/v1/auth/register", json={"password": "test"})
+    assert_missing_field(res, "username")
+
+def test_register_password_missing(client, assert_missing_field):
+    res = client.post("/v1/auth/register", json={"username": "test"})
+    assert_missing_field(res, "password")

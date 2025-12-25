@@ -1,2 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "workout-tracker-api"
+version = "0.1.0"
+description = "Workout Tracker API"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "SQLAlchemy",
+    "pyjwt",
+    "pwdlib[argon2]",
+    "psycopg2-binary",
+    "python-multipart",
+    "alembic",
+    "pydantic-settings",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "freezegun",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*" = ["F401"]

@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db.database import engine
 from app.dependencies import get_db
 from app.main import app
+from app.core.config import get_settings
 
 @pytest.fixture(scope="session", autouse=True)
 def migrate_db():
@@ -41,10 +42,20 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 @pytest.fixture
+def settings():
+    return get_settings()
+
+@pytest.fixture
 def create_user(client):
     def _create(username="test", password="test"):
         return client.post("/v1/auth/register", json={"username": username, "password": password})
     return _create
+
+@pytest.fixture
+def login_user(client):
+    def _login(username="test", password="test"):
+        return client.post("/v1/auth/login", data={"username": username, "password": password})
+    return _login
 
 @pytest.fixture
 def assert_missing_field():
