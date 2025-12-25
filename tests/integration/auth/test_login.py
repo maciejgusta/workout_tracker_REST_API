@@ -35,8 +35,8 @@ def test_login_success(client, create_user, db_session):
     set_cookies = res2.headers.get_list("set-cookie")
     refresh_header = next(c for c in set_cookies if c.startswith("refresh_token=")).lower()
     assert "httponly" in refresh_header
-    assert "path=/v1/auth/refresh" in refresh_header
-    assert "samesite=lax" in refresh_header
+    assert "path=/v1/auth" in refresh_header
+    assert "samesite=strict" in refresh_header
 
     assert security.verify_refresh_token(refresh_token, validate_refresh_token(db_session, refresh_token).token_hash)
 

@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime, timezone
+from uuid import uuid4
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from pwdlib import PasswordHash
@@ -37,6 +38,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
             "iss": settings.JWT_ISSUER,
             "aud": settings.JWT_AUDIENCE,
             "typ": "access",
+            "jti": uuid4().hex,
         }
     )
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
@@ -55,6 +57,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> 
             "iss": settings.JWT_ISSUER,
             "aud": settings.JWT_AUDIENCE,
             "typ": "refresh",
+            "jti": uuid4().hex,
         }
     )
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
@@ -66,7 +69,7 @@ def decode_token(token: str, token_type: str | None = None) -> dict | None:
             "key": settings.JWT_SECRET.get_secret_value(),
             "algorithms": [settings.JWT_ALGORITHM],
             "options": {
-                "require": ["exp", "sub", "iss", "aud", "typ"],
+                "require": ["exp", "sub", "iss", "aud", "typ", "jti"],
             },
             "audience": settings.JWT_AUDIENCE,
             "issuer": settings.JWT_ISSUER

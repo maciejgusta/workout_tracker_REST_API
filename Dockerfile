@@ -5,7 +5,6 @@ WORKDIR /code
 ARG INSTALL_EXTRAS=""
 
 COPY pyproject.toml README.md ./
-COPY app ./app
 
 RUN if [ -n "$INSTALL_EXTRAS" ]; then \
     pip install --no-cache-dir ".[${INSTALL_EXTRAS}]"; \

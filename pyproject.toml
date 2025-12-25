@@ -26,7 +26,6 @@ test = [
     "pytest",
     "pytest-asyncio",
     "httpx",
-    "freezegun",
 ]
 
 [tool.setuptools.packages.find]

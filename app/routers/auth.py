@@ -35,8 +35,8 @@ async def login(
         value=refresh_token,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="lax",
-        path="/v1/auth/refresh",
+        samesite="strict",
+        path="/v1/auth",
         max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
 
@@ -79,8 +79,8 @@ def refresh(
         value=rotated_refresh_token,
         httponly=True,
         secure=settings.COOKIE_SECURE,
-        samesite="lax",
-        path="/v1/auth/refresh",
+        samesite="strict",
+        path="/v1/auth",
         max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
 
@@ -90,10 +90,17 @@ def refresh(
 def logout(
     request: Request,
     response: Response,
+    settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db)
 ):
     refresh_token = request.cookies.get("refresh_token")    
     if refresh_token:
         delete_refresh_token(db, refresh_token)
 
-    response.delete_cookie(key="refresh_token", path="/v1/auth/refresh")
+    response.delete_cookie(
+        key="refresh_token",
+        path="/v1/auth",
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="strict",
+    )

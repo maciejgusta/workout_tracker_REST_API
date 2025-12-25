@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from app.db.database import engine
 from app.dependencies import get_db
 from app.main import app
-from app.core.config import get_settings
 
 @pytest.fixture(scope="session", autouse=True)
 def migrate_db():
@@ -40,10 +39,6 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-
-@pytest.fixture
-def settings():
-    return get_settings()
 
 @pytest.fixture
 def create_user(client):
