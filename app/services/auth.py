@@ -8,6 +8,7 @@ from app.models.refresh_token import RefreshToken
 from app.core.security import (
     verify_password,
     hash_password,
+    validate_password,
     decode_token,
     hash_refresh_token,
     create_access_token,
@@ -25,7 +26,15 @@ def authenticate_user(db: Session, username: str, password: str):
 def create_user(db: Session, username: str, password: str):
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists"
+        )
+    if not validate_password(password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters"
+        )
     user = User(username=username, password_hash=hash_password(password))
     db.add(user)
     db.commit()
@@ -115,3 +124,13 @@ def rotate_refresh_tokens(db: Session, token: str) -> tuple[str, str]:
 
     access = create_access_token({"sub": str(user_id)})
     return access, new_refresh
+
+def delete_refresh_tokens_for_user(db: Session, user: User) -> None:
+    try:
+        db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete(synchronize_session=False)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to revoke existing refresh tokens"
+        ) from exc

@@ -17,6 +17,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
+def validate_password(password: str):
+    return len(password) >= 8
+
 def hash_refresh_token(token: str) -> str:
     secret = settings.JWT_SECRET.get_secret_value().encode("utf-8")
     return hmac.new(secret, token.encode("utf-8"), hashlib.sha256).hexdigest()

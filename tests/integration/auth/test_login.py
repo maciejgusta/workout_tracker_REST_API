@@ -8,15 +8,13 @@ def assert_missing_field(res: Response, field: str):
     errors = res.json().get("detail", [])
     assert any(e["loc"] == ["body", field] and e["type"] == "missing" for e in errors)
 
-def test_login_success(client, create_user, db_session):
-    username = "test"
-    password = "test"
-    res1 = create_user(username=username, password=password)
+def test_login_success(create_user, login_user, db_session):
+    res1 = create_user()
     assert res1.status_code == 201
     assert "id" in res1.json().keys()
     user_id = res1.json().get("id")
 
-    res2 = client.post("/v1/auth/login", data={"username": username, "password": password})
+    res2 = login_user()
     assert res2.status_code == 200
 
     #access token check
@@ -40,14 +38,12 @@ def test_login_success(client, create_user, db_session):
 
     assert security.verify_refresh_token(refresh_token, validate_refresh_token(db_session, refresh_token).token_hash)
 
-def test_login_invalid_credentials(client, create_user):
-    username = "test"
-    password = "test"
-    bad_password = "TEST"
-    res1 = create_user(username=username, password=password)
+def test_login_invalid_credentials(create_user, login_user):
+    bad_password = "wrongpass"
+    res1 = create_user()
     assert res1.status_code == 201
 
-    res2 = client.post("/v1/auth/login", data={"username": username, "password": bad_password})
+    res2 = login_user(password=bad_password)
     assert res2.status_code == 401
     assert res2.json().get("detail") == "Incorrect username or password"
     
@@ -56,5 +52,5 @@ def test_login_missing_password(client, assert_missing_field):
     assert_missing_field(res, "password")
 
 def test_login_missing_username(client, assert_missing_field):
-    res = client.post("/v1/auth/login", data={"password": "test"})
+    res = client.post("/v1/auth/login", data={"password": "testpass1"})
     assert_missing_field(res, "username")

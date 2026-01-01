@@ -8,13 +8,12 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 
 ## Features
 
--   User authentication (JWT access token + refresh token)
--   CRUD for exercises
--   Workout sessions with exercises + sets (reps/weight/RPE)
+-   JWT auth with access tokens + refresh tokens (HTTP-only cookie + rotation)
+-   User self-service: `GET /users/me`, `POST /users/me/change-password`, `DELETE /users/me`
+-   Role support (`user`, `admin`)
 -   Input validation + consistent error responses
 -   PostgreSQL schema with constraints + migrations (Alembic)
--   Automated tests (unit + intergration)
--   CI pipeline (lint + tests + coverage) via GitHub Actions
+-   Automated tests (integration)
 -   OpenAPI docs (Swagger UI)
 
 ---
@@ -26,7 +25,7 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 -   **DB**: PostgreSQL
 -   **ORM**: SQLAlchemy 2.0
 -   **Migrations**: Alembic
--   **Auth**: JWT (access + refresh), bcrypt password hashing
+-   **Auth**: JWT (access + refresh), pwdlib (Argon2id) password hashing
 -   **Tests**: pytest, httpx
 -   **Quality**: ruff
 -   **CI**: GitHub Actions
@@ -36,14 +35,15 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 
 ## Architecture
 
-The projects uses a layered structure to keep HTTP concerns separate from business rules and persistance:
+The project uses a layered structure to keep HTTP concerns separate from business rules and persistence:
 
--   `api` - FastAPI initialization and routing
--   `schemas/` - Pydantic models (API contract)
--   `services/` - business logic (permissions, domain rules)
--   `models/` - SQLAlchemy models (DB entities)
--   `db/` - session/engine + migrations
--   `core/` - configuration and security settings
+-   `app/main.py` - FastAPI initialization
+-   `app/routers/` - route definitions
+-   `app/schemas/` - Pydantic models (API contract)
+-   `app/services/` - business logic (permissions, domain rules)
+-   `app/models/` - SQLAlchemy models (DB entities)
+-   `app/db/` - session/engine + migrations
+-   `app/core/` - configuration and security settings
 
 High-level request flow:
 
@@ -61,8 +61,8 @@ High-level request flow:
 
 Notes:
 
--   All user-owned resources are scoperd by `user_id`
--   DB-level constaints prevent invalid values (e.g. reps > 0, weight >= 0)
+-   All user-owned resources are scoped by `user_id`
+-   Refresh tokens are stored server-side for rotation and revocation
 
 ---
 
@@ -76,3 +76,37 @@ Base path: `/v1`
 -   `POST /v1/auth/login`
 -   `POST /v1/auth/refresh`
 -   `POST /v1/auth/logout`
+
+### Users
+
+-   `GET /v1/users/me`
+-   `POST /v1/users/me/change-password`
+-   `DELETE /v1/users/me`
+
+---
+
+## Quickstart
+
+1. Copy environment variables:
+
+    - `cp .env.example .env`
+
+2. Start the stack:
+
+    - `docker compose up -d`
+
+3. Run migrations:
+
+    - `docker compose exec api alembic upgrade head`
+
+4. (Optional) Seed an admin user:
+    - Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env`
+    - `docker compose exec api python scripts/seed_admin.py`
+
+## Tests
+
+Run all tests with the test compose file:
+
+```
+./scripts/test.sh
+```

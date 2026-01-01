@@ -3,7 +3,7 @@ from app.core import security
 
 def test_register_success(create_user, db_session):
     username = "test"
-    password = "test"
+    password = "testtest"
     res = create_user(username=username, password=password)
     assert res.status_code == 201
     assert set(res.json().keys()) == {"id", "username", "created_at"}
@@ -13,18 +13,26 @@ def test_register_success(create_user, db_session):
 
 def test_register_user_exists(create_user):
     username = "test"
-    password = "test"
-    res1 = create_user(username=username, password=password)
+    res1 = create_user(username=username)
     assert res1.status_code == 201
     assert res1.json().get("username") == username
-    res2 = create_user(username=username, password=password)
+    res2 = create_user(username=username)
     assert res2.status_code == 409
     assert res2.json().get("detail") == "Username already exists"
 
 def test_register_username_missing(client, assert_missing_field):
-    res = client.post("/v1/auth/register", json={"password": "test"})
+    res = client.post("/v1/auth/register", json={"password": "testpass1"})
     assert_missing_field(res, "username")
 
 def test_register_password_missing(client, assert_missing_field):
     res = client.post("/v1/auth/register", json={"username": "test"})
     assert_missing_field(res, "password")
+
+def test_register_password_too_short(create_user):
+    res = create_user(password="short")
+    assert res.status_code == 422
+    errors = res.json().get("detail", [])
+    assert any(
+        error.get("loc") == ["body", "password"] and error.get("type") == "string_too_short"
+        for error in errors
+    )

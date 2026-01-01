@@ -1,21 +1,45 @@
-from fastapi import Depends, HTTPException, status, Response, Request
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.auth import Token, UserCreate, UserOut
-from app.models.user import User
-from app.services.auth import authenticate_user, create_user, store_refresh_token, rotate_refresh_tokens, delete_refresh_token
+from app.services.auth import (
+    authenticate_user,
+    create_user,
+    store_refresh_token,
+    rotate_refresh_tokens,
+    delete_refresh_token,
+)
 from app.core.config import Settings, get_settings
 from app.core.security import create_access_token, create_refresh_token
-from app.dependencies import get_db, get_current_user
+from app.dependencies import get_db
 from sqlalchemy.orm import Session
-from typing import Annotated
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Login",
+    description=(
+        "Authenticates using form data and returns an access token. "
+        "Also sets a `refresh_token` HTTP-only cookie scoped to `/v1/auth`."
+    ),
+    responses={
+        200: {
+            "description": "Authenticated",
+            "headers": {
+                "Set-Cookie": {
+                    "schema": {"type": "string"},
+                    "description": "Sets refresh_token cookie",
+                },
+            },
+        },
+        401: {"description": "Incorrect username or password"},
+        422: {"description": "Validation error (form data)"},
+    },
+)
 async def login(
     response: Response,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: OAuth2PasswordRequestForm = Depends(),
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db)
 ) -> Token:
@@ -42,26 +66,47 @@ async def login(
 
     return Token(access_token=access_token, token_type="bearer")
 
-@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserOut)
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UserOut,
+    summary="Register",
+    description="Creates a new user account.",
+    responses={
+        201: {"description": "User created"},
+        409: {"description": "Username already exists"},
+        422: {"description": "Validation error (e.g., min_length)"},
+    },
+)
 async def register(
     user: UserCreate,
     db: Session = Depends(get_db)
 ) -> UserOut:
     user = create_user(db, user.username, user.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already exists"
-        )
     return user
 
-@router.get("/me", status_code=status.HTTP_200_OK, response_model=UserOut)
-async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> UserOut:
-    return current_user
 
-@router.post("/refresh", response_model=Token)
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh access token",
+    description=(
+        "Rotates the refresh token and returns a new access token. "
+        "Requires a valid `refresh_token` cookie."
+    ),
+    responses={
+        200: {
+            "description": "Token refreshed",
+            "headers": {
+                "Set-Cookie": {
+                    "schema": {"type": "string"},
+                    "description": "Rotates refresh_token cookie",
+                },
+            },
+        },
+        401: {"description": "Missing or invalid refresh token"},
+    },
+)
 def refresh(
     request: Request,
     response: Response,
@@ -86,7 +131,23 @@ def refresh(
 
     return Token(access_token=access_token, token_type="bearer")
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Logout",
+    description="Deletes the refresh token cookie and revokes the token if present.",
+    responses={
+        204: {
+            "description": "Logged out",
+            "headers": {
+                "Set-Cookie": {
+                    "schema": {"type": "string"},
+                    "description": "Clears refresh_token cookie",
+                },
+            },
+        },
+    },
+)
 def logout(
     request: Request,
     response: Response,
