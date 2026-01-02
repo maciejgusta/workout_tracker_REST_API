@@ -11,9 +11,11 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 -   JWT auth with access tokens + refresh tokens (HTTP-only cookie + rotation)
 -   User self-service: `GET /users/me`, `POST /users/me/change-password`, `DELETE /users/me`
 -   Role support (`user`, `admin`)
+-   Exercises catalog (admin-managed) with pagination + filtering
+-   Soft delete for exercises (`is_active`)
 -   Input validation + consistent error responses
 -   PostgreSQL schema with constraints + migrations (Alembic)
--   Automated tests (integration)
+-   Automated tests (integration: auth, users, exercises)
 -   OpenAPI docs (Swagger UI)
 
 ---
@@ -63,6 +65,7 @@ Notes:
 
 -   All user-owned resources are scoped by `user_id`
 -   Refresh tokens are stored server-side for rotation and revocation
+-   Exercises are global and managed by admins; users can only view active ones
 
 ---
 
@@ -82,6 +85,14 @@ Base path: `/v1`
 -   `GET /v1/users/me`
 -   `POST /v1/users/me/change-password`
 -   `DELETE /v1/users/me`
+
+### Exercises
+
+-   `GET /v1/exercises` (supports `name`, `limit`, `offset`)
+-   `GET /v1/exercises/{id}`
+-   `POST /v1/exercises` (admin)
+-   `PATCH /v1/exercises/{id}` (admin)
+-   `DELETE /v1/exercises/{id}` (admin, soft delete)
 
 ---
 
@@ -105,8 +116,12 @@ Base path: `/v1`
 
 ## Tests
 
-Run all tests with the test compose file:
+1. Create test environment:
 
-```
-./scripts/test.sh
-```
+    - `cp .env.example .env.test`
+
+2. Run testing script:
+
+    ```
+    ./scripts/test.sh
+    ```

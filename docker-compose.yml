@@ -9,6 +9,8 @@ services:
             - .env
         depends_on:
             - db
+        environment:
+            PYTHONPATH: /code
 
     db:
         image: postgres:18-alpine

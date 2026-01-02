@@ -8,7 +8,7 @@ from alembic import context
 import os
 
 from app.db.database import Base
-from app.models import user, refresh_token # noqa: F401 (Ignore "unused import")
+from app.models import user, refresh_token, exercise # noqa: F401 (Ignore "unused import")
 
 from dotenv import load_dotenv
 load_dotenv()

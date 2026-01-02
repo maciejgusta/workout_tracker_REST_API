@@ -10,6 +10,9 @@ from app.db.database import engine
 from app.dependencies import get_db
 from app.main import app
 from app.schemas.auth import Token
+from app.core.security import hash_password
+from app.models.user import User, UserRole
+from app.models.exercise import Exercise, ExerciseMuscle, ExerciseEquipment
 
 @pytest.fixture(scope="session", autouse=True)
 def migrate_db():
@@ -29,8 +32,8 @@ def db_session():
     try:
         yield session
     finally:
-        session.close()
-        transaction.rollback()
+        if transaction.is_active:
+            transaction.rollback()
         connection.close()
 
 @pytest.fixture
@@ -71,3 +74,79 @@ def auth_header():
         token_obj = Token.model_validate(res.json())
         return {"Authorization": f"Bearer {token_obj.access_token}"}
     return _auth_header
+
+@pytest.fixture
+def admin_user(db_session):
+    user = User(
+        username="admin",
+        password_hash=hash_password("adminpass1"),
+        role=UserRole.ADMIN,
+    )
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+@pytest.fixture
+def login_admin(client, admin_user):
+    def _login(username="admin", password="adminpass1"):
+        return client.post("/v1/auth/login", data={"username": username, "password": password})
+    return _login
+
+@pytest.fixture
+def admin_auth_header(login_admin, auth_header):
+    res = login_admin()
+    return auth_header(res)
+
+@pytest.fixture
+def user_auth_header(create_user, login_user, auth_header):
+    create_user()
+    res = login_user()
+    return auth_header(res)
+
+@pytest.fixture
+def create_exercise_db(db_session):
+    def _create(
+        name="Bench Press",
+        primary_muscle=ExerciseMuscle.CHEST,
+        equipment=ExerciseEquipment.BARBELL,
+        is_active=True,
+    ):
+        exercise = Exercise(
+            name=name,
+            primary_muscle=primary_muscle,
+            equipment=equipment,
+            is_active=is_active,
+        )
+        db_session.add(exercise)
+        db_session.commit()
+        db_session.refresh(exercise)
+        return exercise
+    return _create
+
+@pytest.fixture
+def exercise_payload():
+    def _payload(
+        name="Bench Press",
+        primary_muscle="chest",
+        equipment="barbell",
+        is_active=True,
+    ):
+        payload = {
+            "name": name,
+            "primary_muscle": primary_muscle,
+            "equipment": equipment,
+        }
+        if is_active is not None:
+            payload["is_active"] = is_active
+        return payload
+    return _payload
+
+@pytest.fixture
+def create_exercise(client, admin_auth_header, exercise_payload):
+    def _create(**kwargs):
+        return client.post(
+            "/v1/exercises/",
+            json=exercise_payload(**kwargs),
+            headers=admin_auth_header,
+        )
+    return _create
