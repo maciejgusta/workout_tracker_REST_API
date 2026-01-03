@@ -41,7 +41,9 @@ def test_exercises_list_filtering(client, create_exercise_db, user_auth_header):
     create_exercise_db(name="Incline Bench")
     create_exercise_db(name="Squat")
 
-    res = client.get("/v1/exercises/", headers=user_auth_header, params={"name": "bench"})
+    res = client.get(
+        "/v1/exercises/", headers=user_auth_header, params={"name": "bench"}
+    )
     assert res.status_code == 200
     body = res.json()
     assert body["total"] == 2
@@ -54,14 +56,18 @@ def test_exercises_list_pagination(client, create_exercise_db, user_auth_header)
     create_exercise_db(name="Bravo")
     create_exercise_db(name="Charlie")
 
-    res = client.get("/v1/exercises/", headers=user_auth_header, params={"limit": 2, "offset": 0})
+    res = client.get(
+        "/v1/exercises/", headers=user_auth_header, params={"limit": 2, "offset": 0}
+    )
     assert res.status_code == 200
     body = res.json()
     assert body["total"] == 3
     assert len(body["items"]) == 2
     assert [item["name"] for item in body["items"]] == ["Alpha", "Bravo"]
 
-    res2 = client.get("/v1/exercises/", headers=user_auth_header, params={"limit": 2, "offset": 2})
+    res2 = client.get(
+        "/v1/exercises/", headers=user_auth_header, params={"limit": 2, "offset": 2}
+    )
     assert res2.status_code == 200
     body2 = res2.json()
     assert body2["total"] == 3

@@ -1,6 +1,8 @@
 # Workout Tracker API
 
-A production-grade REST API for tracking workouts, exercises, and sets. Built with **FastAPI** and **PostgreSQL**, with **migrations**, **tests**, and a **CI pipeline**.
+Version: **0.4.0**
+
+A production-grade REST API for tracking workouts, exercises, and sets. Built with **FastAPI** and **PostgreSQL**, with **migrations** and **tests**.
 
 > Goal: demonstrate real backend engineering practices (clean architecture, validation, auth, testing, documentation, CI).
 
@@ -11,11 +13,12 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 -   JWT auth with access tokens + refresh tokens (HTTP-only cookie + rotation)
 -   User self-service: `GET /users/me`, `POST /users/me/change-password`, `DELETE /users/me`
 -   Role support (`user`, `admin`)
+-   Workouts with nested workout exercises and sets
 -   Exercises catalog (admin-managed) with pagination + filtering
 -   Soft delete for exercises (`is_active`)
 -   Input validation + consistent error responses
 -   PostgreSQL schema with constraints + migrations (Alembic)
--   Automated tests (integration: auth, users, exercises)
+-   Automated tests (integration: auth, users, exercises, workouts, workout exercises, sets)
 -   OpenAPI docs (Swagger UI)
 
 ---
@@ -30,7 +33,7 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 -   **Auth**: JWT (access + refresh), pwdlib (Argon2id) password hashing
 -   **Tests**: pytest, httpx
 -   **Quality**: ruff
--   **CI**: GitHub Actions
+-   **Package manager**: uv
 -   **Dev**: Docker Compose
 
 ---
@@ -93,6 +96,28 @@ Base path: `/v1`
 -   `POST /v1/exercises` (admin)
 -   `PATCH /v1/exercises/{id}` (admin)
 -   `DELETE /v1/exercises/{id}` (admin, soft delete)
+
+### Workouts
+
+-   `GET /v1/workouts`
+-   `GET /v1/workouts/{id}`
+-   `POST /v1/workouts`
+-   `PATCH /v1/workouts/{id}`
+-   `DELETE /v1/workouts/{id}`
+
+### Workout Exercises
+
+-   `GET /v1/workouts/{workout_id}/exercises`
+-   `POST /v1/workouts/{workout_id}/exercises`
+-   `PATCH /v1/workouts/{workout_id}/exercises/{workout_exercise_id}`
+-   `DELETE /v1/workouts/{workout_id}/exercises/{workout_exercise_id}`
+
+### Sets
+
+-   `GET /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets`
+-   `POST /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets`
+-   `PATCH /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets/{set_id}`
+-   `DELETE /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets/{set_id}`
 
 ---
 

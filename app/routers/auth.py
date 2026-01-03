@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
 @router.post(
     "/login",
     response_model=Token,
@@ -41,14 +42,14 @@ async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     settings: Settings = Depends(get_settings),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> Token:
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
@@ -61,10 +62,11 @@ async def login(
         secure=settings.COOKIE_SECURE,
         samesite="strict",
         path="/v1/auth",
-        max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
     return Token(access_token=access_token, token_type="bearer")
+
 
 @router.post(
     "/register",
@@ -78,10 +80,7 @@ async def login(
         422: {"description": "Validation error (e.g., min_length)"},
     },
 )
-async def register(
-    user: UserCreate,
-    db: Session = Depends(get_db)
-) -> UserOut:
+async def register(user: UserCreate, db: Session = Depends(get_db)) -> UserOut:
     user = create_user(db, user.username, user.password)
     return user
 
@@ -111,11 +110,13 @@ def refresh(
     request: Request,
     response: Response,
     settings: Settings = Depends(get_settings),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> Token:
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token"
+        )
 
     access_token, rotated_refresh_token = rotate_refresh_tokens(db, refresh_token)
 
@@ -126,10 +127,11 @@ def refresh(
         secure=settings.COOKIE_SECURE,
         samesite="strict",
         path="/v1/auth",
-        max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        max_age=60 * 60 * 24 * int(settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
     return Token(access_token=access_token, token_type="bearer")
+
 
 @router.post(
     "/logout",
@@ -152,9 +154,9 @@ def logout(
     request: Request,
     response: Response,
     settings: Settings = Depends(get_settings),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    refresh_token = request.cookies.get("refresh_token")    
+    refresh_token = request.cookies.get("refresh_token")
     if refresh_token:
         delete_refresh_token(db, refresh_token)
 

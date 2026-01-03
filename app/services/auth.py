@@ -15,6 +15,7 @@ from app.core.security import (
     create_refresh_token,
 )
 
+
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -23,17 +24,17 @@ def authenticate_user(db: Session, username: str, password: str):
         return None
     return user
 
+
 def create_user(db: Session, username: str, password: str):
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already exists"
+            status_code=status.HTTP_409_CONFLICT, detail="Username already exists"
         )
     if not validate_password(password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters"
+            detail="Password must be at least 8 characters",
         )
     user = User(username=username, password_hash=hash_password(password))
     db.add(user)
@@ -41,10 +42,13 @@ def create_user(db: Session, username: str, password: str):
     db.refresh(user)
     return user
 
+
 def store_refresh_token(db: Session, user_id: int, token: str) -> RefreshToken:
     payload = decode_token(token, token_type="refresh")
     if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
     expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
     token_hash = hash_refresh_token(token)
     refresh_token = RefreshToken(
@@ -57,8 +61,11 @@ def store_refresh_token(db: Session, user_id: int, token: str) -> RefreshToken:
     db.refresh(refresh_token)
     return refresh_token
 
+
 def validate_refresh_token(db: Session, token: str) -> RefreshToken:
-    invalid_refresh_token_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    invalid_refresh_token_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+    )
     payload = decode_token(token, token_type="refresh")
     if not payload or "sub" not in payload:
         raise invalid_refresh_token_exception
@@ -68,16 +75,26 @@ def validate_refresh_token(db: Session, token: str) -> RefreshToken:
         raise invalid_refresh_token_exception
 
     token_hash = hash_refresh_token(token)
-    valid_token = db.query(RefreshToken).filter(RefreshToken.user_id == user_id, RefreshToken.token_hash == token_hash, RefreshToken.expires_at >= datetime.now(timezone.utc)).first()
+    valid_token = (
+        db.query(RefreshToken)
+        .filter(
+            RefreshToken.user_id == user_id,
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.expires_at >= datetime.now(timezone.utc),
+        )
+        .first()
+    )
     if not valid_token:
         raise invalid_refresh_token_exception
-    
+
     return valid_token
+
 
 def delete_refresh_token(db: Session, token: str) -> None:
     token_hash = hash_refresh_token(token)
     db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).delete()
     db.commit()
+
 
 def rotate_refresh_tokens(db: Session, token: str) -> tuple[str, str]:
     invalid_refresh_token_exception = HTTPException(
@@ -125,12 +142,15 @@ def rotate_refresh_tokens(db: Session, token: str) -> tuple[str, str]:
     access = create_access_token({"sub": str(user_id)})
     return access, new_refresh
 
+
 def delete_refresh_tokens_for_user(db: Session, user: User) -> None:
     try:
-        db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete(synchronize_session=False)
+        db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete(
+            synchronize_session=False
+        )
     except SQLAlchemyError as exc:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to revoke existing refresh tokens"
+            detail="Failed to revoke existing refresh tokens",
         ) from exc

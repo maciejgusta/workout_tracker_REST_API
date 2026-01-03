@@ -14,6 +14,7 @@ from app.core.security import hash_password
 from app.models.user import User, UserRole
 from app.models.exercise import Exercise, ExerciseMuscle, ExerciseEquipment
 
+
 @pytest.fixture(scope="session", autouse=True)
 def migrate_db():
     alembic_cfg = Config("alembic.ini")
@@ -22,6 +23,7 @@ def migrate_db():
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     command.upgrade(alembic_cfg, "head")
     yield
+
 
 @pytest.fixture
 def db_session():
@@ -34,28 +36,40 @@ def db_session():
     finally:
         if transaction.is_active:
             transaction.rollback()
+        session.close()
         connection.close()
+
 
 @pytest.fixture
 def client(db_session):
     def override_get_db():
         yield db_session
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
 
+
 @pytest.fixture
 def create_user(client):
     def _create(username="test", password="testtest"):
-        return client.post("/v1/auth/register", json={"username": username, "password": password})
+        return client.post(
+            "/v1/auth/register", json={"username": username, "password": password}
+        )
+
     return _create
+
 
 @pytest.fixture
 def login_user(client):
     def _login(username="test", password="testtest"):
-        return client.post("/v1/auth/login", data={"username": username, "password": password})
+        return client.post(
+            "/v1/auth/login", data={"username": username, "password": password}
+        )
+
     return _login
+
 
 @pytest.fixture
 def assert_missing_field():
@@ -66,14 +80,18 @@ def assert_missing_field():
             error.get("loc") == ["body", field] and error.get("type") == "missing"
             for error in errors
         )
+
     return _assert_missing_field
+
 
 @pytest.fixture
 def auth_header():
     def _auth_header(res: Response) -> dict[str, str]:
         token_obj = Token.model_validate(res.json())
         return {"Authorization": f"Bearer {token_obj.access_token}"}
+
     return _auth_header
+
 
 @pytest.fixture
 def admin_user(db_session):
@@ -86,22 +104,29 @@ def admin_user(db_session):
     db_session.commit()
     return user
 
+
 @pytest.fixture
 def login_admin(client, admin_user):
     def _login(username="admin", password="adminpass1"):
-        return client.post("/v1/auth/login", data={"username": username, "password": password})
+        return client.post(
+            "/v1/auth/login", data={"username": username, "password": password}
+        )
+
     return _login
+
 
 @pytest.fixture
 def admin_auth_header(login_admin, auth_header):
     res = login_admin()
     return auth_header(res)
 
+
 @pytest.fixture
 def user_auth_header(create_user, login_user, auth_header):
     create_user()
     res = login_user()
     return auth_header(res)
+
 
 @pytest.fixture
 def create_exercise_db(db_session):
@@ -121,7 +146,9 @@ def create_exercise_db(db_session):
         db_session.commit()
         db_session.refresh(exercise)
         return exercise
+
     return _create
+
 
 @pytest.fixture
 def exercise_payload():
@@ -139,7 +166,9 @@ def exercise_payload():
         if is_active is not None:
             payload["is_active"] = is_active
         return payload
+
     return _payload
+
 
 @pytest.fixture
 def create_exercise(client, admin_auth_header, exercise_payload):
@@ -149,4 +178,58 @@ def create_exercise(client, admin_auth_header, exercise_payload):
             json=exercise_payload(**kwargs),
             headers=admin_auth_header,
         )
+
+    return _create
+
+
+@pytest.fixture
+def create_workout(client):
+    def _create(name="Workout", user_id=None, headers=None):
+        payload = {"name": name}
+        if user_id is not None:
+            payload["user_id"] = user_id
+        return client.post("/v1/workouts/", json=payload, headers=headers)
+
+    return _create
+
+
+@pytest.fixture
+def create_workout_exercise(client):
+    def _create(workout_id, exercise_id, headers, position=None):
+        payload = {"exercise_id": exercise_id}
+        if position is not None:
+            payload["position"] = position
+        return client.post(
+            f"/v1/workouts/{workout_id}/exercises",
+            json=payload,
+            headers=headers,
+        )
+
+    return _create
+
+
+@pytest.fixture
+def create_set(client):
+    def _create(
+        workout_id,
+        workout_exercise_id,
+        headers,
+        repetitions=10,
+        set_index=None,
+        weight=None,
+        rpe=None,
+    ):
+        payload = {"repetitions": repetitions}
+        if set_index is not None:
+            payload["set_index"] = set_index
+        if weight is not None:
+            payload["weight"] = weight
+        if rpe is not None:
+            payload["rpe"] = rpe
+        return client.post(
+            f"/v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets",
+            json=payload,
+            headers=headers,
+        )
+
     return _create

@@ -6,6 +6,7 @@ services:
                 INSTALL_EXTRAS: "test"
         volumes:
             - .:/code
+            - /code/.venv
         env_file:
             - .env.test
         depends_on:

@@ -32,10 +32,9 @@ def _clear_refresh_cookie(response: Response, settings: Settings) -> Response:
         401: {"description": "Not authenticated"},
     },
 )
-def me(
-    current_user: User = Depends(get_current_user)
-) -> UserOut:
+def me(current_user: User = Depends(get_current_user)) -> UserOut:
     return current_user
+
 
 @router.delete(
     "/me",
@@ -59,10 +58,11 @@ def delete_me(
     response: Response,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
 ):
     users.delete_user(db, current_user)
     return _clear_refresh_cookie(response, settings)
+
 
 @router.post(
     "/me/change-password",
@@ -92,12 +92,16 @@ def change_password(
     change_password: ChangePassword,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
 ):
-    authenticated_user = auth.authenticate_user(db, current_user.username, change_password.current_password)
-    if (authenticated_user is None or authenticated_user.id != current_user.id):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Current password is invalid")
-    
+    authenticated_user = auth.authenticate_user(
+        db, current_user.username, change_password.current_password
+    )
+    if authenticated_user is None or authenticated_user.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is invalid",
+        )
+
     users.change_password(db, current_user, change_password.new_password)
     return _clear_refresh_cookie(response, settings)
-    

@@ -11,29 +11,37 @@ settings = get_settings()
 
 password_hash = PasswordHash.recommended()
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
+
 
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
+
 def validate_password(password: str):
     return len(password) >= 8
+
 
 def hash_refresh_token(token: str) -> str:
     secret = settings.JWT_SECRET.get_secret_value().encode("utf-8")
     return hmac.new(secret, token.encode("utf-8"), hashlib.sha256).hexdigest()
 
+
 def verify_refresh_token(token: str, token_hash: str) -> bool:
     expected = hash_refresh_token(token)
     return hmac.compare_digest(expected, token_hash)
+
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
     to_encode.update(
         {
             "exp": expire,
@@ -44,15 +52,22 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
             "jti": uuid4().hex,
         }
     )
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.JWT_SECRET.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
+    )
     return encoded_jwt
+
 
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS))
+        expire = datetime.now(timezone.utc) + timedelta(
+            days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
     to_encode.update(
         {
             "exp": expire,
@@ -63,8 +78,13 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> 
             "jti": uuid4().hex,
         }
     )
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.JWT_SECRET.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
+    )
     return encoded_jwt
+
 
 def decode_token(token: str, token_type: str | None = None) -> dict | None:
     try:
@@ -75,7 +95,7 @@ def decode_token(token: str, token_type: str | None = None) -> dict | None:
                 "require": ["exp", "sub", "iss", "aud", "typ", "jti"],
             },
             "audience": settings.JWT_AUDIENCE,
-            "issuer": settings.JWT_ISSUER
+            "issuer": settings.JWT_ISSUER,
         }
         payload = jwt.decode(token, **decode_kwargs)
         if token_type and payload.get("typ") != token_type:

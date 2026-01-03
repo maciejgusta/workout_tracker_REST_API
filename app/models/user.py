@@ -5,9 +5,11 @@ import enum
 from datetime import datetime
 from app.db.database import Base
 
+
 class UserRole(str, enum.Enum):
     USER = "user"
     ADMIN = "admin"
+
 
 class User(Base):
     __tablename__ = "users"

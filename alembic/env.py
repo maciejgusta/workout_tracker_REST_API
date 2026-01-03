@@ -8,11 +8,18 @@ from alembic import context
 import os
 
 from app.db.database import Base
-from app.models import user, refresh_token, exercise # noqa: F401 (Ignore "unused import")
+from app.models import (
+    user,  # noqa: F401
+    refresh_token,  # noqa: F401
+    exercise,  # noqa: F401
+    workout,  # noqa: F401
+    workout_exercise,  # noqa: F401
+    set,  # noqa: F401
+)
 
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 
 
 # this is the Alembic Config object, which provides
@@ -79,9 +86,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

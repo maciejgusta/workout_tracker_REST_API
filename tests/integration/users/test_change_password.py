@@ -5,7 +5,9 @@ from app.schemas.auth import Token
 from app.services import auth
 
 
-def test_users_change_password_success(client, create_user, login_user, db_session, auth_header):
+def test_users_change_password_success(
+    client, create_user, login_user, db_session, auth_header
+):
     old_password = "testtest"
     new_password = "newpass12"
 
@@ -25,7 +27,9 @@ def test_users_change_password_success(client, create_user, login_user, db_sessi
     )
     assert res3.status_code == 204
     set_cookies = res3.headers.get_list("set-cookie")
-    refresh_header = next(c for c in set_cookies if c.startswith("refresh_token=")).lower()
+    refresh_header = next(
+        c for c in set_cookies if c.startswith("refresh_token=")
+    ).lower()
     assert "path=/v1/auth" in refresh_header
     assert "samesite=strict" in refresh_header
 
@@ -43,7 +47,9 @@ def test_users_change_password_success(client, create_user, login_user, db_sessi
     assert token_obj.access_token is not None
 
 
-def test_users_change_password_invalid_current(client, create_user, login_user, auth_header):
+def test_users_change_password_invalid_current(
+    client, create_user, login_user, auth_header
+):
     res1 = create_user(password="testpass1")
     assert res1.status_code == 201
     res2 = login_user(password="testpass1")

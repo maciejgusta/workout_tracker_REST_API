@@ -11,7 +11,9 @@ def test_exercises_get_success_user(client, create_exercise_db, user_auth_header
     assert "updated_at" not in data
 
 
-def test_exercises_get_success_admin_inactive(client, create_exercise_db, admin_auth_header):
+def test_exercises_get_success_admin_inactive(
+    client, create_exercise_db, admin_auth_header
+):
     exercise = create_exercise_db(name="Hidden", is_active=False)
 
     res = client.get(f"/v1/exercises/{exercise.id}", headers=admin_auth_header)
@@ -21,7 +23,9 @@ def test_exercises_get_success_admin_inactive(client, create_exercise_db, admin_
     assert data["is_active"] is False
 
 
-def test_exercises_get_inactive_hidden_from_user(client, create_exercise_db, user_auth_header):
+def test_exercises_get_inactive_hidden_from_user(
+    client, create_exercise_db, user_auth_header
+):
     exercise = create_exercise_db(name="Hidden", is_active=False)
 
     res = client.get(f"/v1/exercises/{exercise.id}", headers=user_auth_header)

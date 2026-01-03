@@ -14,23 +14,24 @@ from app.services import exercises
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 
+
 @router.get(
-        "/",
-        status_code=status.HTTP_200_OK,
-        response_model=ExercisesListResponse,
-        response_model_exclude_none=True,
-        summary="List exercises",
-        description="Returns list of exercises; use query params for filtering or pagination",
-        responses={
-            200: {"description": "Exercises returned"},
-            401: {"description": "Could not validate credentials"},
-        }
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=ExercisesListResponse,
+    response_model_exclude_none=True,
+    summary="List exercises",
+    description="Returns list of exercises; use query params for filtering or pagination",
+    responses={
+        200: {"description": "Exercises returned"},
+        401: {"description": "Could not validate credentials"},
+    },
 )
 def exercises_get_list(
     pagination: PaginationParams = Depends(),
     filters: ExercisesFilterParams = Depends(),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> ExercisesListResponse:
     is_admin = current_user.role == UserRole.ADMIN
     items, total = exercises.list_exercises(db, pagination, filters, is_admin)
@@ -40,6 +41,7 @@ def exercises_get_list(
         limit=pagination.limit,
         offset=pagination.offset,
     )
+
 
 @router.post(
     "/",
@@ -53,14 +55,15 @@ def exercises_get_list(
         403: {"description": "Admin only"},
         409: {"description": "Exercise name already exists"},
         422: {"description": "Validation error"},
-    }
+    },
 )
 def exercises_create_one(
     exercise: ExerciseCreate,
     admin_user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> ExerciseResponse:
     return exercises.create_exercise(db, exercise)
+
 
 @router.get(
     "/{exercise_id}",
@@ -74,18 +77,17 @@ def exercises_create_one(
         401: {"description": "Could not validate credentials"},
         404: {"description": "Exercise not found"},
         422: {"description": "Validation error"},
-    }
+    },
 )
 def exercises_get_one(
     exercise_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> ExerciseResponse:
     is_admin = current_user.role == UserRole.ADMIN
     exercise = exercises.get_exercise_by_id(db, exercise_id, is_admin)
-    return exercises.exercise_to_response(
-        exercise, is_admin
-    )
+    return exercises.exercise_to_response(exercise, is_admin)
+
 
 @router.patch(
     "/{exercise_id}",
@@ -100,16 +102,17 @@ def exercises_get_one(
         403: {"description": "Admin only"},
         404: {"description": "Exercise not found"},
         409: {"description": "Exercise name already exists"},
-        422: {"description": "Validation error"}
-    }
+        422: {"description": "Validation error"},
+    },
 )
 def exercises_update_one(
     exercise_id: int,
     exercise_payload: ExerciseUpdate,
     current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> ExerciseResponse:
     return exercises.update_exercise(db, exercise_id, exercise_payload)
+
 
 @router.delete(
     "/{exercise_id}",
@@ -121,12 +124,11 @@ def exercises_update_one(
         401: {"description": "Could not validate credentials"},
         403: {"description": "Admin only"},
         404: {"description": "Exercise not found"},
-    }
+    },
 )
 def exercise_delete_one(
     exercise_id: int,
     current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     exercises.delete_exercise(db, exercise_id)
-    

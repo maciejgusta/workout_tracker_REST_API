@@ -1,7 +1,9 @@
 from app.models.exercise import Exercise
 
 
-def test_exercises_delete_success_admin(client, admin_auth_header, create_exercise_db, db_session):
+def test_exercises_delete_success_admin(
+    client, admin_auth_header, create_exercise_db, db_session
+):
     exercise = create_exercise_db(name="Bench Press")
 
     res = client.delete(f"/v1/exercises/{exercise.id}", headers=admin_auth_header)
@@ -20,7 +22,9 @@ def test_exercises_delete_unauthorized(client, create_exercise_db):
     assert res.json().get("detail") == "Not authenticated"
 
 
-def test_exercises_delete_forbidden_non_admin(client, user_auth_header, create_exercise_db):
+def test_exercises_delete_forbidden_non_admin(
+    client, user_auth_header, create_exercise_db
+):
     exercise = create_exercise_db(name="Bench Press")
     res = client.delete(f"/v1/exercises/{exercise.id}", headers=user_auth_header)
     assert res.status_code == 403

@@ -31,7 +31,9 @@ def test_exercises_update_unauthorized(client, create_exercise_db):
     assert res.json().get("detail") == "Not authenticated"
 
 
-def test_exercises_update_forbidden_non_admin(client, user_auth_header, create_exercise_db):
+def test_exercises_update_forbidden_non_admin(
+    client, user_auth_header, create_exercise_db
+):
     exercise = create_exercise_db(name="Bench Press")
     res = client.patch(
         f"/v1/exercises/{exercise.id}",
@@ -65,7 +67,9 @@ def test_exercises_update_conflict_name(client, admin_auth_header, create_exerci
     assert res.json().get("detail") == "Exercise name already exists"
 
 
-def test_exercises_update_validation_error(client, admin_auth_header, create_exercise_db):
+def test_exercises_update_validation_error(
+    client, admin_auth_header, create_exercise_db
+):
     exercise = create_exercise_db(name="Bench Press")
 
     res = client.patch(

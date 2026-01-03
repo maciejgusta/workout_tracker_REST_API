@@ -7,6 +7,7 @@ from app.core import security
 from app.schemas.auth import Token
 from app.services import auth
 
+
 def test_refresh_success(client, db_session, create_user, login_user):
     res1 = create_user()
     assert res1.status_code == 201
@@ -22,7 +23,9 @@ def test_refresh_success(client, db_session, create_user, login_user):
     assert res3.status_code == 200
     assert res3.cookies.get("refresh_token") is not None
     set_cookies = res3.headers.get_list("set-cookie")
-    refresh_header = next(c for c in set_cookies if c.startswith("refresh_token=")).lower()
+    refresh_header = next(
+        c for c in set_cookies if c.startswith("refresh_token=")
+    ).lower()
     assert "httponly" in refresh_header
     assert "path=/v1/auth" in refresh_header
     assert "samesite=strict" in refresh_header
@@ -43,16 +46,19 @@ def test_refresh_success(client, db_session, create_user, login_user):
     assert exc.value.status_code == 401
     assert exc.value.detail == "Invalid refresh token"
 
+
 def test_refresh_missing_token(client):
     res = client.post("/v1/auth/refresh")
     assert res.status_code == 401
     assert res.json().get("detail") == "Missing refresh token"
+
 
 def test_refresh_garbage_token(client):
     client.cookies.set("refresh_token", "garbage_string")
     res = client.post("/v1/auth/refresh")
     assert res.status_code == 401
     assert res.json().get("detail") == "Invalid refresh token"
+
 
 def test_refresh_wrong_token_type(client, create_user, login_user):
     res1 = create_user()
@@ -64,6 +70,7 @@ def test_refresh_wrong_token_type(client, create_user, login_user):
     res3 = client.post("/v1/auth/refresh")
     assert res3.status_code == 401
     assert res3.json().get("detail") == "Invalid refresh token"
+
 
 def test_refresh_expired_token(client, db_session, create_user):
     res1 = create_user()
@@ -80,7 +87,8 @@ def test_refresh_expired_token(client, db_session, create_user):
     res2 = client.post("/v1/auth/refresh")
     assert res2.status_code == 401
     assert res2.json().get("detail") == "Invalid refresh token"
-    
+
+
 def test_refresh_token_not_in_db(client, db_session, create_user, login_user):
     res1 = create_user()
     assert res1.status_code == 201
@@ -93,6 +101,7 @@ def test_refresh_token_not_in_db(client, db_session, create_user, login_user):
     assert res3.status_code == 401
     assert res3.json().get("detail") == "Invalid refresh token"
 
+
 def test_refresh_after_logout(client, db_session, create_user, login_user):
     res1 = create_user()
     assert res1.status_code == 201
@@ -103,4 +112,3 @@ def test_refresh_after_logout(client, db_session, create_user, login_user):
     res4 = client.post("/v1/auth/refresh")
     assert res4.status_code == 401
     assert res4.json().get("detail") == "Missing refresh token"
-    

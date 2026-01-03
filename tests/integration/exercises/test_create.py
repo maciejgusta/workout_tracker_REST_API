@@ -11,8 +11,12 @@ def test_exercises_create_success_admin(client, admin_auth_header, exercise_payl
     assert "updated_at" in data
 
 
-def test_exercises_create_forbidden_non_admin(client, user_auth_header, exercise_payload):
-    res = client.post("/v1/exercises/", json=exercise_payload(), headers=user_auth_header)
+def test_exercises_create_forbidden_non_admin(
+    client, user_auth_header, exercise_payload
+):
+    res = client.post(
+        "/v1/exercises/", json=exercise_payload(), headers=user_auth_header
+    )
     assert res.status_code == 403
     assert res.json().get("detail") == "Admin only"
 
@@ -32,7 +36,9 @@ def test_exercises_create_duplicate_name(create_exercise):
     assert res2.json().get("detail") == "Exercise name already exists"
 
 
-def test_exercises_create_validation_error(client, admin_auth_header, assert_missing_field):
+def test_exercises_create_validation_error(
+    client, admin_auth_header, assert_missing_field
+):
     res = client.post(
         "/v1/exercises/",
         json={"primary_muscle": "chest", "equipment": "barbell"},
