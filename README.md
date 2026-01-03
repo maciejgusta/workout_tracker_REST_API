@@ -1,6 +1,6 @@
 # Workout Tracker API
 
-Version: **0.4.0**
+Version: **1.0.0**
 
 A production-grade REST API for tracking workouts, exercises, and sets. Built with **FastAPI** and **PostgreSQL**, with **migrations** and **tests**.
 
@@ -16,9 +16,11 @@ A production-grade REST API for tracking workouts, exercises, and sets. Built wi
 -   Workouts with nested workout exercises and sets
 -   Exercises catalog (admin-managed) with pagination + filtering
 -   Soft delete for exercises (`is_active`)
--   Input validation + consistent error responses
+-   Input validation
 -   PostgreSQL schema with constraints + migrations (Alembic)
 -   Automated tests (integration: auth, users, exercises, workouts, workout exercises, sets)
+-   Health and readiness endpoints
+-   Request logging with request IDs
 -   OpenAPI docs (Swagger UI)
 
 ---
@@ -119,9 +121,18 @@ Base path: `/v1`
 -   `PATCH /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets/{set_id}`
 -   `DELETE /v1/workouts/{workout_id}/exercises/{workout_exercise_id}/sets/{set_id}`
 
+### Health
+
+-   `GET /health`
+-   `GET /ready`
+
 ---
 
 ## Quickstart
+
+Prerequisites:
+
+-   Docker + Docker Compose
 
 1. Copy environment variables:
 
@@ -129,24 +140,52 @@ Base path: `/v1`
 
 2. Start the stack:
 
-    - `docker compose up -d`
+    - `docker compose up --build -d`
 
 3. Run migrations:
 
-    - `docker compose exec api alembic upgrade head`
+    - `docker compose exec api uv run alembic upgrade head`
 
-4. (Optional) Seed an admin user:
-    - Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env`
-    - `docker compose exec api python scripts/seed_admin.py`
+4. (Optional) Seed demo data (users, exercises, workouts, sets):
+
+    - `docker compose exec api uv run scripts/seed_demo.py`
+    - Defaults: `admin/admin1234`, `demo/demo1234`
+
+5. Stop:
+
+    - `docker compose down`
 
 ## Tests
 
+Prerequisites:
+
+-   Docker + Docker Compose
+
 1. Create test environment:
 
-    - `cp .env.example .env.test`
+    - `cp .env.example.test .env.test`
 
 2. Run testing script:
 
     ```
     ./scripts/test.sh
     ```
+
+---
+
+## Developer Scripts
+
+-   `uv run scripts/lint.py` - lint
+-   `uv run scripts/lint_fix.py` - auto-fix lint issues
+-   `uv run scripts/format.py` - format
+
+---
+
+## Future Improvements
+
+-   Rate limiting (e.g., auth endpoints)
+-   Structured logging + centralized log shipping
+-   Request tracing/metrics (OpenTelemetry)
+-   Background jobs (emails, cleanup tasks)
+-   Caching (read-heavy endpoints)
+-   CI/CD pipeline with automated deploys
